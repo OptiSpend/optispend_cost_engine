@@ -1,0 +1,108 @@
+<div id="arch" style="overflow-x:auto"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const themeMode = document.documentElement.dataset.mode;
+const dark = themeMode ? themeMode === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"anthropic-sans", sans-serif',
+  flowchart: { htmlLabels: true, curve: 'basis' },
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"anthropic-sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    primaryColor: dark ? '#26215C' : '#EEEDFE',
+    primaryBorderColor: dark ? '#AFA9EC' : '#534AB7',
+    primaryTextColor: dark ? '#CECBF6' : '#26215C',
+    clusterBkg: dark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+    clusterBorder: dark ? '#5F5E5A' : '#B4B2A9'
+  }
+});
+const src = `flowchart TB
+subgraph L1["1 · Intake and understanding"]
+U["Upload drawing PDF<br/>plus optional STEP"]
+VX["Vision LLM extraction<br/>title block, notes, mass, BOM table to JSON"]
+RES{"Code decides:<br/>part or assembly?"}
+CHK["Code matches BOM part numbers<br/>against uploaded sheets"]
+ASK["Ask user for<br/>missing child drawings"]
+U --> VX --> RES
+RES -- "assembly" --> CHK
+CHK -- "missing" --> ASK --> U
+end
+PCM[("PART COST MODEL<br/>one JSON per RFQ, BOM tree,<br/>every stage reads and writes it")]
+RES -- "single part" --> PCM
+CHK -- "complete" --> PCM
+subgraph L2["2 · Process routing, per child part"]
+PID["Process identification<br/>signal table plus LLM plus retrieved corrections"]
+HG1{{"HUMAN GATE 1<br/>confirm process"}}
+SKQ{"Skill exists?"}
+STUB["Graceful stub message<br/>skill under development, demand logged"]
+end
+PCM --> PID --> HG1 --> SKQ
+SKQ -- "no" --> STUB
+SKQ -- "stamping" --> PP
+subgraph L3["3 · Stamping skill v1, each engine swappable"]
+PP["Process planner<br/>LLM plus rules plus few-shot memory"]
+RT["Route: tandem vs progressive<br/>rules first, LLM where rules silent"]
+GW["Blank and gross weight proposer<br/>heuristic v0, learned model later"]
+MS["Machine selector<br/>tonnage, bed size, capability rules"]
+CT["Cycle time<br/>per-machine formulas"]
+HG2{{"HUMAN GATE 2<br/>approve or edit plan"}}
+PP --> RT --> GW --> MS --> CT --> HG2
+end
+subgraph L4["4 · Deterministic engines, zero LLM"]
+RM["RM cost engine<br/>net weight waterfall, rate, scrap credit"]
+MHR["MHR engine<br/>capital plus fixed plus variable over net hours"]
+OH["Overhead stack<br/>customer percentage waterfall"]
+ROLL["Assembly rollup<br/>children plus assembly operations"]
+RM --> MHR --> OH --> ROLL
+end
+HG2 --> RM
+subgraph L5["5 · Quality gate"]
+V1["Deterministic validators<br/>mass balance, tonnage, sanity bands"]
+CRIT["Critic agent<br/>different LLM rechecks against drawing"]
+HG3{{"HUMAN GATE 3<br/>engineer review"}}
+V1 --> CRIT --> HG3
+end
+ROLL --> V1
+CRIT -. "fail: back to owning stage, max 2 retries" .-> PP
+subgraph L6["6 · Output"]
+SB["Sheet builder<br/>customer template plus audit tab"]
+QV["Versioned quote log<br/>who changed what, when"]
+SB --> QV
+end
+HG3 --> SB
+subgraph K["Knowledge stores: config, not code"]
+RP[("Region pack<br/>labor, electricity, RM index")]
+MDB[("Machine database")]
+CP[("Customer profile<br/>overhead percentages, output format")]
+AR[("Assumptions register<br/>editable defaults with provenance")]
+CM[("Correction memory<br/>drawing features to right answer")]
+FA["Freshness agent<br/>scheduled rate checks, drift flags"]
+FA -.-> RP
+end
+RP -.-> RM
+RP -.-> MHR
+MDB -.-> MS
+CP -.-> OH
+CP -.-> SB
+AR -.-> RM
+CM -.-> PID
+CM -.-> GW
+HG1 -. "corrections" .-> CM
+HG2 -. "corrections" .-> CM
+HG3 -. "corrections" .-> CM
+subgraph OFF["Offline quality loop"]
+GS["Golden set regression<br/>reruns on every prompt, rule or model change"]
+end
+CM -.-> GS
+GS -.-> PP`;
+const { svg } = await mermaid.render('arch-svg', src);
+document.getElementById('arch').innerHTML = svg;
+const s = document.querySelector('#arch svg');
+if (s) { s.style.maxWidth = 'none'; s.style.width = '100%'; s.style.height = 'auto'; }
+</script>
