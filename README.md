@@ -4,10 +4,15 @@ A prototype that turns a 2D engineering drawing into a **dimensionally correct
 3D model**, with automatic proof that the model matches the drawing.
 
 **Try it in the browser, nothing to install:**
-https://harshm27.github.io/Engineering_Design/
+https://optispend.github.io/optispend_cost_engine/
 runs the same profile solver on the real spool-shaft spec. Edit a
 number and it rebuilds; contradict another number and it refuses, naming the
-dimension that does not close.
+dimension that does not close. The same page reads an uploaded drawing when you
+paste your own Anthropic API key.
+
+`drawing_to_solid_brief.pdf` is the two-page summary of the whole prototype.
+`optispend_end_to_end_architecture.html` is the wider architecture sketch this
+sits inside.
 
 ## Run the full pipeline
 
@@ -27,13 +32,12 @@ interactive viewer is produced. Exit 0 means all twelve checks held.
 
 ## Upload your own drawings
 
-The live page at https://harshm27.github.io/Engineering_Design/ does this with
-no server at all: choose a drawing, paste **your own Anthropic API key**
-(console.anthropic.com; a read costs a few pence), and the browser calls the
-Claude API directly. The key never touches any server of ours. The returned
-spec is vetted by the same solver in the page: a reading that does not close is
-sent back once for correction, and a second failure shows the residual instead
-of a wrong part.
+The live page does this with no server at all: choose a drawing, paste **your
+own Anthropic API key** (console.anthropic.com; a read costs a few pence), and
+the browser calls the Claude API directly. The key never touches any server of
+ours. The returned spec is vetted by the same solver in the page: a reading that
+does not close is sent back once for correction, and a second failure shows the
+residual instead of a wrong part.
 
 For STEP files and raster verification, run the full pipeline locally; the web
 app version of the same flow is `python -m uvicorn webapp:app --port 8000` with
@@ -69,6 +73,15 @@ builder solves the tangencies the drawing only implies and refuses when the
 dimension chain does not close; the verifier reprojects the finished solid onto
 the drawing image, because a spec can be self-consistent and still wrong.
 
+## What is in here
+
+- `drawing2solid/` : the pipeline. builder, verifier, viewer generator, reader.
+- `docs/` : the live page served by GitHub Pages, plus both worked examples.
+- `examples/`, `drawings/` : the reference spec and the two source drawings.
+- `viewers/` : standalone interactive viewers for the two finished parts.
+- `parts/bracket.py` : the sheet-metal bracket, modelled directly in CadQuery.
+- `SKILL.md`, `SCHEMA.md` : the drawing-reading workflow and the spec format.
+
 ## Scope, stated plainly
 
 Automated coverage is turned parts: shafts, spools, bushes, pins, plus axial
@@ -76,4 +89,4 @@ holes, bolt-hole patterns and DIN 509 undercuts. The bracket in `viewers/` is
 sheet metal, outside that range, modelled directly in CadQuery (`parts/bracket.py`).
 Native .dwg/.rvt cannot be read; export to DXF or supply PDF/image. Threads are
 modelled at tapping drill. `SKILL.md` is the drawing-reading workflow for the
-AI-assisted step. `brief.pdf` is a two-page summary.
+AI-assisted step.
